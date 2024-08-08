@@ -3,6 +3,8 @@ This repo contains the three place-it sub repo.
 
 ## Installation
 1. copy .env.example as .env
+## Using
+to benefit from sail command you'll need to add a new alias that points to the server folder like this: `alias sail2='sh $([ -f sail ] && echo sail || echo place-it-server/vendor/bin/sail)'`
 
 ## urls
 server
