@@ -1,10 +1,28 @@
 {
 	"folders": [
 		{
+			"name": "PLACE-IT",
 			"path": "."
+		},
+		{
+			"name": "Client",
+			"path": "./place-it-client"
+		},
+		{
+			"name": "Live websocket",
+			"path": "./place-it-websocket"
+		},
+		{
+			"name": "Server",
+			"path": "./place-it-server"
 		}
 	],
 	"settings": {
-		"workbench.colorTheme": "Ayu Mirage"
+		"files.exclude": {
+				"./place-it-client": true,
+				"./place-it-websocket": true,
+				"./place-it-server": true
+		},
+		"workbench.colorTheme": "Bearded Theme feat. WebDevCody"
 	}
 }
