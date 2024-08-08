@@ -15,3 +15,8 @@ client
 ```
 http://place-it.test
 ```
+
+## testing
+You'll need to create a database `larave_test` and gant it appropriate permissions
+
+1. copy .env.dusk.local.example as .env.dusk.local
