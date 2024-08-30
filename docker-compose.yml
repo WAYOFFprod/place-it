@@ -139,7 +139,14 @@ services:
             - sail
     selenium:
         env_file: ".env"
-        image: seleniarm/standalone-chromium
+        image: seleniarm/standalone-chromium:latest
+        environment:
+            - SE_NODE_SESSION_TIMEOUT=15
+            - SE_NODE_MAX_SESSIONS=2
+            - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+        ports:
+            - '${FORWARD_SELENIUM_PORT:-4444}:4444'
+            - '${FORWARD_SELENIUM_HEADFUL_PORT:-7900}:7900'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         volumes:
