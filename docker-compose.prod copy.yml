@@ -1,0 +1,123 @@
+services:
+    laravel.place-it.test:
+        container_name: place-it_laravel
+        image: ghcr.io/wayoffprod/place-it-server:release
+        restart: unless-stopped
+        ports:
+            - '${APP_PORT:-8080}:80'
+        environment:
+            APP_NAME: '${APP_NAME:-PlaceIt}'
+            APP_ENV: '${APP_ENV:-production}'
+            APP_KEY: '${APP_KEY}'
+            APP_DEBUG: '${APP_DEBUG:-false}'
+            APP_URL: '${APP_URL}'
+            DB_CONNECTION: mysql
+            DB_HOST: mysql
+            DB_PORT: 3306
+            DB_DATABASE: '${DB_DATABASE}'
+            DB_USERNAME: '${DB_USERNAME}'
+            DB_PASSWORD: '${DB_PASSWORD}'
+            REDIS_HOST: redis
+            REDIS_PASSWORD: '${REDIS_PASSWORD:-null}'
+            REDIS_PORT: 6379
+            CACHE_DRIVER: redis
+            SESSION_DRIVER: redis
+            QUEUE_CONNECTION: redis
+            BROADCAST_DRIVER: redis
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        networks:
+            - place-it-network
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_started
+    mysql:
+        container_name: place-it_db
+        image: 'mysql:8.0'
+        restart: unless-stopped
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - 'place-it-volume-mysql:/var/lib/mysql'
+        networks:
+            - place-it-network
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-p${DB_ROOT_PASSWORD}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+    
+    redis:
+        container_name: place-it_redis
+        image: 'redis:7-alpine'
+        restart: unless-stopped
+        command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-null}
+        volumes:
+            - 'place-it-volume-redis:/data'
+        networks:
+            - place-it-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3 
+    websocket.place-it.test:
+        container_name: place-it_websocket
+        image: ghcr.io/wayoffprod/place-it-websocket:release
+        restart: unless-stopped
+        ports:
+            - "${WEBSOCKET_PORT:-3000}:3000"
+        environment:
+            PORT: 3000
+            CLIENT_URL: '${CLIENT_URL}'
+            SERVER_URL: '${SERVER_URL}'
+            REDIS_HOST: redis
+            REDIS_PASSWORD: '${REDIS_PASSWORD:-null}'
+            NODE_ENV: production
+        networks:
+            - place-it-network
+        depends_on:
+            redis:
+                condition: service_started
+            laravel.place-it.test:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+    place-it.test:
+        container_name: place-it_client
+        image: ghcr.io/wayoffprod/place-it-client:release
+        restart: unless-stopped
+        ports:
+            - "${CLIENT_PORT:-80}:80"
+        networks:
+            - place-it-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 20s
+networks:
+    place-it-network:
+        driver: bridge
+volumes:
+    place-it-volume-mysql:
+        driver: local
+    place-it-volume-redis:
+        driver: local

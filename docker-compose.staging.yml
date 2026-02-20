@@ -1,0 +1,129 @@
+services:
+    laravel.place-it.test:
+        container_name: stg_place-it_laravel
+        image: ghcr.io/wayoffprod/place-it-server:develop
+        restart: unless-stopped
+        environment:
+            APP_NAME: '${APP_NAME:-PlaceIt}'
+            APP_ENV: '${APP_ENV:-staging}'
+            APP_KEY: '${APP_KEY}'
+            APP_DEBUG: '${APP_DEBUG:-false}'
+            APP_URL: '${APP_URL}'
+            DB_CONNECTION: mysql
+            DB_HOST: mysql
+            DB_PORT: 3306
+            DB_DATABASE: '${DB_DATABASE}'
+            DB_USERNAME: '${DB_USERNAME}'
+            DB_PASSWORD: '${DB_PASSWORD}'
+            SESSION_DOMAIN: '${SESSION_DOMAIN}'
+            SANCTUM_STATEFUL_DOMAINS: '${SANCTUM_STATEFUL_DOMAINS}'
+            CACHE_DRIVER: file
+            SESSION_DRIVER: database
+            SESSION_LIFETIME: 10080 # one week
+            SESSION_ENCRYPT: false
+            TRUSTED_PROXIES: "*"
+            SESSION_PATH: /
+            LIVE_URL: "https://staging.websocket.place-it.wayoff.tv"
+            #BROADCAST_CONNECTION: reverb
+            #FILESYSTEM_DISK: local
+            #QUEUE_CONNECTION: database
+            #CACHE_STORE: database
+        healthcheck:
+            test: ["CMD", "curl", "-f", "https://staging.server.place-it.wayoff.tv/"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        volumes:
+            - 'place-it-volume-storage:/var/www/html/storage'
+        networks:
+            - stg-place-it-network
+            - proxy-net
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_started
+    mysql:
+        container_name: stg_place-it_db
+        image: 'mysql:8.0'
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - 'place-it-volume-mysql:/var/lib/mysql'
+        networks:
+            - stg-place-it-network
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-p${DB_ROOT_PASSWORD}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+    
+    redis:
+        container_name: stg_place-it_redis
+        image: 'redis:7-alpine'
+        restart: unless-stopped
+        command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-null}
+        volumes:
+            - 'place-it-volume-redis:/data'
+        networks:
+            - stg-place-it-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3 
+    websocket.place-it.test:
+        container_name: stg_place-it_websocket
+        image: ghcr.io/wayoffprod/place-it-websocket:dev
+        restart: unless-stopped
+        environment:
+            PORT: 3000
+            CLIENT_URL: '${CLIENT_URL}'
+            SERVER_URL: '${SERVER_URL}'
+            REDIS_HOST: redis
+            REDIS_PASSWORD: '${REDIS_PASSWORD:-null}'
+            NODE_ENV: production
+            SERVER_TOKEN: '1|djHoNdnOoR8gYai2FcaloPhmHhEFFRl1GpG6ym0E16595310'
+        networks:
+            - stg-place-it-network
+            - proxy-net
+        depends_on:
+            - redis
+            - laravel.place-it.test
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+    place-it.test:
+        container_name: stg_place-it_client
+        image: ghcr.io/wayoffprod/place-it-client:dev
+        restart: unless-stopped
+        networks:
+            - stg-place-it-network
+            - proxy-net
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 20s
+networks:
+    stg-place-it-network:
+      driver: bridge
+    proxy-net:
+      external: true
+volumes:
+    place-it-volume-mysql:
+        driver: local
+    place-it-volume-redis:
+        driver: local
+    place-it-volume-storage:
+        driver: local
