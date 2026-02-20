@@ -1,0 +1,9 @@
+[submodule "place-it-server"]
+	path = place-it-server
+	url = git@github.com:WAYOFFprod/place-it-server.git
+[submodule "place-it-client"]
+	path = place-it-client
+	url = git@github.com:WAYOFFprod/place-it-client.git
+[submodule "place-it-websocket"]
+	path = place-it-websocket
+	url = git@github.com:WAYOFFprod/place-it-websocket.git
