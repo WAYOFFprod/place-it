@@ -11,7 +11,11 @@ This repo contains the three place-it sub repo.
 launch all the containers using
 
 ```bash
-docker-compose up -d
+# Dev
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up # --build if you need to rebuild
+
+# Preview
+docker compose -f docker-compose.yml -f docker-compose.preview.yml up --build
 ```
 
 if it is the first time you'll need to run the migration on the server with the seeder

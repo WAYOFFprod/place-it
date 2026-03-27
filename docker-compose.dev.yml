@@ -1,0 +1,9 @@
+# Dev override — exposes the Vite dev server port on the host.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+    place-it.test:
+        ports:
+            - "${CLIENT_PORT:-5173}:5173"

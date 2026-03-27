@@ -1,0 +1,21 @@
+# Preview override — swaps the Vite dev client for a production build served by nginx.
+# Activates the service worker so offline features can be tested against the full stack.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.preview.yml up --build
+
+services:
+    place-it.test:
+        container_name: place-it.test
+        build:
+            context: ./place-it-client/
+            dockerfile: ./docker/Dockerfile.preview
+            args:
+                PUBLIC_SERVER_URL: '${PUBLIC_SERVER_URL}'
+                PUBLIC_WEBSOCKET_URL: '${PUBLIC_WEBSOCKET_URL}'
+        ports:
+            - "${CLIENT_PORT:-5173}:80"
+        # No volumes — the build is baked into the image
+        volumes: []
+        # No dev command — nginx takes over from the Dockerfile
+        command: []

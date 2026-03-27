@@ -20,7 +20,7 @@ services:
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
         volumes:
             - './place-it-server:/var/www/html'
-            - './place-it-server/Docker/20-xdebug.ini:/etc/php/8.4/cli/conf.d/20-xdebug.ini'
+            - './place-it-server/docker/20-xdebug.ini:/etc/php/8.4/cli/conf.d/20-xdebug.ini'
         networks:
             - sail
         depends_on:
@@ -121,13 +121,13 @@ services:
         command: /usr/bin/supervisord -c /app/docker/supervisor.conf
     place-it.test:
         env_file: ".env"
+        container_name: place-it.test
         build:
             context: ./place-it-client/
             dockerfile: ./docker/Dockerfile.dev
         extra_hosts:
             - 'host.docker.internal:host-gateway'
-        ports:
-            - "${CLIENT_PORT:-5173}:5173"
+        ports: []
         environment:
             - PORT=${PORT}
             - PUBLIC_WEBSOCKET_URL=${PUBLIC_WEBSOCKET_URL}
